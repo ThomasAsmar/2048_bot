@@ -7,3 +7,5 @@ I read these two papers and found them very interesting.
 They detail a temporal difference learning approach to learning the game 2048.  
 My work here heavily relies on these papers, and I would recommend anyone who is reading this
   or has found this project interesting to read them as well. 
+  
+ I also recently learnt about Processing so decided to write my code in this language for the easy visuals. 
