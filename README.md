@@ -1,4 +1,4 @@
-# 2048_bot
+# sketch_2048_bot
 
 I read these two papers and found them very interesting.
   https://pdfs.semanticscholar.org/e11f/23691ca8f6dabbf701c367d9c09882e1690f.pdf
