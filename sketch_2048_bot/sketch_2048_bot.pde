@@ -2,12 +2,31 @@
 final int cols = 4;
 final int rows = 4;
 
-final int w = 300;
-final int h = 300;
+
+//Mess with these for window size.
+//In the setup function near the bottom, you must change the parameters in size(*, *) to be 4 times these numbers
+final int w = 150;
+final int h = 150;
+
 
 import java.util.ArrayList;
 import java.util.Collections;
 
+
+//Use LEFT and RIGHT arrow keys for speed of bot
+//Up arrow key to end current game
+
+
+//Parameters for bot
+boolean saveAfter = true;
+boolean loadFile = true;
+int gamesToPlay = 10;
+String saveLocation = "location";
+String loadLocation = "weights50000";
+
+
+
+//Indices for N-Tuple Network
 int[] firstTuple = {0, 4, 8, 12};
 int[] secondTuple = {1, 5, 9, 13};
 int[] thirdTuple = {1 , 2, 5, 6, 9, 10};
@@ -49,9 +68,6 @@ int logBase(int x, int base) {
 }
 
 int hashIndices(int[] cells, int[] indices) {
-    //print("FDFDFDFDFD\n\n");  
- // println(cells);
-    //println(indices);
    int toReturn = 0;
    for (int index : indices) {
       toReturn *= 14;
@@ -60,10 +76,6 @@ int hashIndices(int[] cells, int[] indices) {
          toReturn += logBase(val, 2); 
       }
    }
-   
-   //println(toReturn);
-   //print("FDFDFDFDFD\n\n");
-
    return toReturn;
   
 }
@@ -84,6 +96,7 @@ class State {
 
     if (thisIsNewState) {     
         curScore = 0;
+        //Create new board
         int index = (int) random(16);
         int index2 = (int) random(16);
         double rand = random(1);
@@ -102,6 +115,7 @@ class State {
        
        calcHashes();
     } else {
+      //Copy an old board
        for (int i = 0; i < 16; i ++) {
           cells[i] = oldState.cells[i]; 
        }
@@ -117,15 +131,10 @@ class State {
   void calcHashes() {
     int index = 0;
     for (int j = 0; j < 5; j++) {
-        int[][] tuple = allIndices[j];
-        
+        int[][] tuple = allIndices[j];   
         for (int[] tuplePos : tuple) {
-
            hashes[index] = hashIndices(cells, tuplePos);
-           //print(index + " " , hashes[index]+ " ", tuplePos.length+ " ");
-           //print("FDFDFD\n\n");
            index++;
-           //println(hashes[index-1]);
         }
     }
   }
@@ -232,11 +241,12 @@ class State {
          
         stroke(255);
        int toUse = logBase(val, 2) * 20;
+       //Very arbitrary coloring scheme
        fill(toUse % 40 + toUse % 25, toUse / 3 % 100, toUse % 10 + toUse / 2);
        rect(x*w, y*h, w, h);
        fill(255);
        textAlign(CENTER);
-       textSize(26);
+       textSize(w / 10);
        text(val, (x+.5)*w, (y+.5)*h);
          
        }
@@ -246,7 +256,7 @@ class State {
 }
 
 //
-//Hyperparameters
+//Hyperparameter
 //
 double alpha = .01;
 
@@ -436,10 +446,10 @@ class Weight {
   
    
    void loadWeights(String loc) {
-     String[] first = loadStrings("../" + loc + "0.ddd");
-     String[] second = loadStrings("../" + loc + "1.ddd");
-     String[] third = loadStrings("../" + loc + "2.ddd");
-     String[] fourth = loadStrings("../" + loc + "3.ddd");
+     String[] first = loadStrings("../data/" + loc + "0.ddd");
+     String[] second = loadStrings("../data/" + loc + "1.ddd");
+     String[] third = loadStrings("../data/" + loc + "2.ddd");
+     String[] fourth = loadStrings("../data/" + loc + "3.ddd");
      
      String[][] strings = {first, second, third, fourth};
      
@@ -456,7 +466,7 @@ class Weight {
      }
      
    }
-   void saveData() {
+   void saveData(String name) {
 
      
      String[] firstSet = new String[(int) pow(14, 4)];
@@ -474,7 +484,7 @@ class Weight {
           
         }
       
-      saveStrings("../weights100k" + str(i) + ".ddd", set) ; 
+      saveStrings("../data/" + name + str(i) + ".ddd", set) ; 
     }
     
     
@@ -486,12 +496,14 @@ class Weight {
      
      if (curState.getMax() > maxTile)
          maxTile = curState.getMax();
-     println(curState.curScore + " " + curState.getMax() + " " + gamesLeft + " " + maxTile);
+     println("Game Ended with score " + curState.curScore + " and max tile " + curState.getMax() + " -- Games Left: " + (gamesLeft - 1) + " -- All Time Max Tile: " + maxTile);
        
      
      
-     if (gamesLeft == 1 && save) 
-       saveData();  
+     if (gamesLeft == 1 && save) {  
+       saveData(saveLocation);  
+       exit();
+     }
      
      gamesLeft -= 1;
      curState = new State(true, null); 
@@ -521,25 +533,15 @@ class Weight {
           bestScore = points;
           nextState = newState;
        }
-                //print("DSDSDSDS");
-
-         }
-                  //print("DSDSDSDS");
+      }
 
          State sNext = addRandom(nextState);
-         
-         //score += bestScore;
          if (learn)
-                    //print("DSDSDSDS");
-
            learnFromAfterState(nextState, sNext);
          
-         //println("DSDSDSDS");
          state = sNext;
-         //println(bestScore, " ", state.curScore);
          state.addScore(bestScore);
 
-         //state.display();
          curState = state;
          if (curState.lost)
            return 0;
@@ -549,28 +551,17 @@ class Weight {
    }
    
    int playOneGame(boolean learn, int timePerMove) {
-     //int score = 0;
      
      State state = curState;
-     
-     //draw();
-     //state.display();
-    // print("HII");
-     
-     //int move = 0;
      int start;
      while (!state.lost) {
-         //print("HIHII");
          start = millis();
          int bestScore = -999999999;
          State nextState = null;
          double bestV = 0;
-         //move += 1;
          for (int i = 0; i < 4; i++) {
-                    //print("DSDSDSDS");
 
            Object[] info = nextMoveState(i, state);
-                    //print("DSDSDSDS");
 
            int points = (int) info[0];
            double vVal = (double) info[1];
@@ -582,31 +573,21 @@ class Weight {
               bestScore = points;
               nextState = newState;
            }
-                    //print("DSDSDSDS");
 
          }
-                  //print("DSDSDSDS");
 
          State sNext = addRandom(nextState);
          
-         //score += bestScore;
          if (learn)
-                    //print("DSDSDSDS");
-
            learnFromAfterState(nextState, sNext);
          
-         //println("DSDSDSDS");
          state = sNext;
-         //println(bestScore, " ", state.curScore);
          state.addScore(bestScore);
 
-         //state.display();
          curState = state;
          delay(timePerMove - (millis() - start));
-         println("HIHII");
          
      }  
-     //print(score);
      
      return curState.curScore;
      
@@ -622,11 +603,12 @@ class Weight {
 
 Weight learner;
 int framerate = 10;
+
 void setup() {
-  size(1200, 1200);
+  size(600, 600);
   
   frameRate(framerate);
-  learner = new Weight(1000, "weights50000", true, false);
+  learner = new Weight(gamesToPlay, loadLocation, loadFile, saveAfter);
   background(0);  
 }
 
@@ -641,17 +623,8 @@ void playGame() {
 }
 
 
-
-
-//LEFT RIGHT FOR SPEED
-//UP DOWN FOR WEIGHTS
-//ENTER FOR GO
-
-
-
 void keyPressed() {
  if (keyCode == UP)  {
-   print("HIII");
    learner.reset();
  } 
   
